@@ -1,0 +1,37 @@
+{
+  "invoiceNumber": "INV-1001",
+  "date": "2025-03-23",
+  "dueDate": "2025-04-01",
+  "company": {
+    "name": "Tech Solutions Inc.",
+    "address": "123 Tech Street, Silicon Valley, CA",
+    "phone": "555-123-4567",
+    "email": "contact@techsolutions.com"
+  },
+  "customer": {
+    "name": "John Doe",
+    "address": "456 Customer Rd, New York, NY",
+    "phone": "555-987-6543",
+    "email": "john.doe@email.com"
+  },
+  "items": [
+    {
+      "description": "Web Development Service",
+      "quantity": 2,
+      "price": 1500
+    },
+    {
+      "description": "Hosting Service",
+      "quantity": 1,
+      "price": 300
+    },
+    {
+      "description": "Maintenance",
+      "quantity": 3,
+      "price": 200
+    }
+  ],
+  "subtotal": 3900,
+  "taxRate": 0.1,
+  "total": 4290
+}

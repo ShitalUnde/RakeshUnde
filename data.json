@@ -1,0 +1,24 @@
+{
+  "invoiceNumber": "1234WE",
+  "items": [
+    {
+      "descOfGoods": "<p>2&nbsp;suketu&nbsp;,&nbsp;gate&nbsp;2&nbsp;,</p><p>Jeevandhara&nbsp;</p><p>patan</p>",
+      "hsn": "XCVFRET",
+      "qty": "1",
+      "unit": "1",
+      "rate": "23",
+      "amt": "333445"
+    }
+  ],
+  "buyerName": "RK",
+  "gstno": "12344",
+  "address": "<p>1&nbsp;suketu&nbsp;,&nbsp;gate&nbsp;2&nbsp;,</p><p>Jeevandhara&nbsp;</p><p>patan</p>",
+  "basicAmount": "21222",
+  "totalAmount": "1342333",
+  "amtInWords": "one ",
+  "date": "2025-03-24T17:33:48.341Z",
+  "bank": "Axis Bank",
+  "accountNo": "0984683873",
+  "branch": "Patan",
+  "ifsc": "IFSC007"
+}
