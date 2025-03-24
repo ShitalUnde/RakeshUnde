@@ -1,13 +1,17 @@
+const express = require('express');
+const bodyParser = require('body-parser');
 const htmlPdf = require('html-pdf-node');
 
-exports.handler = async (event, context) => {
-    const data = JSON.parse(event.body);
+const app = express();
+const PORT = 3000;
+
+app.use(bodyParser.json());
+
+app.post('/generate-invoice', async (req, res) => {
+    const data = req.body;
 
     if (!data) {
-        return {
-            statusCode: 400,
-            body: 'Invalid invoice data'
-        };
+        return res.status(400).send('Invalid invoice data');
     }
 
     // 🛠️ Prepare HTML content matching the provided image format
@@ -154,14 +158,13 @@ exports.handler = async (event, context) => {
     const pdfOptions = { format: 'A4' };
     const pdfBuffer = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
 
-    // Return PDF as response
-    return {
-        statusCode: 200,
-        headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="invoice-INVOICE1BN.pdf"'
-        },
-        body: pdfBuffer.toString('base64'),
-        isBase64Encoded: true
-    };
-};
+    // Send PDF for download
+    const fileName = `invoice-INVOICE1BN.pdf`;
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.send(pdfBuffer);
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
