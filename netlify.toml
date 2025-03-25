@@ -1,2 +1,11 @@
 [build]
-functions = "netlify/functions"
+  functions = "netlify/functions"
+
+[dev]
+  command = "node server.js"
+  port = 8888
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
