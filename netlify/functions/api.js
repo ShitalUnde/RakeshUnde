@@ -63,13 +63,15 @@ router.post('/generate-invoice', async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+        console.log('1>', pdfBytes);
         // ✅ Send PDF as downloadable response
         const fileName = `invoice-${Date.now()}.pdf`;
-
+        console.log('2>', fileName);
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         res.setHeader('Content-Type', 'application/pdf');
+        console.log('3>');
         res.send(Buffer.from(pdfBytes));
+        console.log('4>');
 
     } catch (error) {
         console.error('Error generating PDF:', error);
