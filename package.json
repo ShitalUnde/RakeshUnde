@@ -1,21 +1,31 @@
 {
-  "name": "pdfcreation",
-  "version": "1.0.0",
-  "main": "app.js",
+  "name": "netlify-express",
+  "version": "0.0.1",
+  "description": "Example of how to deploy a Express.js Netlify app.",
+  "main": "functions/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "netlify-lambda build express",
-    "start": "node app.js"
+    "start": "node server-local.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "body-parser": "^1.20.3",
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "html-pdf-node": "^1.0.8",
-    "serverless-http": "^3.2.0"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neverendingqs/netlify-express.git"
+  },
+  "keywords": [
+    "netlify",
+    "express.js"
+  ],
+  "author": "neverendingqs",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/neverendingqs/netlify-express/issues"
+  },
+  "homepage": "https://github.com/neverendingqs/netlify-express#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "netlify-lambda": "^0.4.0",
+    "serverless-http": "^1.6.0"
   }
 }
