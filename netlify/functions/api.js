@@ -11,8 +11,12 @@ app.get('/', (req, res) => {
     res.json({ message: 'API is working!' });
 });
 
-app.post('/api/ok', (req, res) => {
-    res.json({ received: req.body });
+app.get('/api/ok', (req, res) => {
+    res.json({ message: 'API1 is working!' });
+});
+
+app.post('/api/ok2', (req, res) => {
+    res.json({ message: 'API2 is working!' });
 });
 
 // Error handling
