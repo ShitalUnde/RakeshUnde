@@ -46,13 +46,13 @@ router.post('/generate-invoice', async (req, res) => {
         yPosition -= 20;
         data.items.forEach((item) => {
             page.drawText(`• ${item.descOfGoods}`, { x: 50, y: yPosition, size: fontSize, font });
-            page.drawText(`HSN: ${item.hsn}, Qty: ${item.qty}, Rate: ₹${item.rate}, Amount: ₹${item.amt}`,
+            page.drawText(`HSN: ${item.hsn}, Qty: ${item.qty}, Rate: ${item.rate}, Amount: ${item.amt}`,
                 { x: 50, y: yPosition - 20, size: fontSize, font });
             yPosition -= 40;
         });
 
         // 🛠️ Total Section
-        page.drawText(`Grand Total: ₹${data.totalAmount}`,
+        page.drawText(`Grand Total: ${data.totalAmount}`,
             { x: 50, y: yPosition - 20, size: fontSize + 2, font, color: rgb(0, 0, 0) });
 
         // ✅ Generate PDF
