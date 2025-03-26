@@ -1,82 +1,74 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
-const htmlPdf = require('html-pdf-node');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 const app = express();
+const router = express.Router();
+app.use(express.json());
 app.use(bodyParser.json());
 
-app.post('/generate-invoice', async (req, res) => {
+// Test Routes
+router.get('/', (req, res) => res.send('API is working!'));
+router.get('/ok', (req, res) => res.send('API1 is working!'));
+router.post('/invoice', (req, res) => res.send({ message: 'API2 is working!' }));
+
+// ✅ PDF Generation Route
+router.post('/generate-invoice', async (req, res) => {
     const data = req.body;
 
     if (!data) {
         return res.status(400).send('Invalid invoice data');
     }
 
-    // 🛠️ Prepare HTML content
-    const htmlContent = `
-    <html>
-    <head>
-        <style>
-            body { font-family: Arial, sans-serif; }
-            .container { width: 850px; margin: auto; padding: 20px; border: 1px solid #ccc; }
-            .header { text-align: center; background: #004080; color: white; padding: 10px; }
-            .footer { text-align: right; margin-top: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header"><h1>TAX INVOICE</h1></div>
-            
-            <h3>Bill To:</h3>
-            <p>${data.buyerName}</p>
-            <p>${data.address}</p>
-            <p>GSTIN: ${data.gstno}</p>
+    try {
+        // 🛠️ Create PDF Document
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([600, 800]);
+        const { width, height } = page.getSize();
 
-            <h3>Items:</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>HSN Code</th>
-                        <th>Qty</th>
-                        <th>Rate</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${data.items.map(item => `
-                        <tr>
-                            <td>${item.descOfGoods}</td>
-                            <td>${item.hsn}</td>
-                            <td>${item.qty}</td>
-                            <td>₹${item.rate}</td>
-                            <td>₹${item.amt}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontSize = 12;
 
-            <div class="footer">
-                <p>Grand Total: ₹${data.totalAmount}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    `;
+        // 🛠️ Add Invoice Header
+        page.drawText('TAX INVOICE', { x: 50, y: height - 50, size: 18, font, color: rgb(0, 0, 0) });
 
-    // Generate PDF
-    const pdfOptions = { format: 'A4' };
-    const pdfBuffer = await htmlPdf.generatePdf({ content: htmlContent }, pdfOptions);
+        // 🛠️ Bill To Section
+        page.drawText(`Bill To:`, { x: 50, y: height - 80, size: fontSize + 2, font, color: rgb(0, 0, 0.7) });
+        page.drawText(`Buyer: ${data.buyerName}`, { x: 50, y: height - 100, size: fontSize, font });
+        page.drawText(`Address: ${data.address}`, { x: 50, y: height - 120, size: fontSize, font });
+        page.drawText(`GSTIN: ${data.gstno}`, { x: 50, y: height - 140, size: fontSize, font });
 
-    // Send PDF for download
-    const fileName = `invoice-${Date.now()}.pdf`;
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.send(pdfBuffer);
+        // 🛠️ Items Section
+        let yPosition = height - 180;
+        page.drawText(`Items:`, { x: 50, y: yPosition, size: fontSize + 2, font, color: rgb(0, 0, 0.7) });
+
+        yPosition -= 20;
+        data.items.forEach((item, index) => {
+            page.drawText(`• ${item.descOfGoods}`, { x: 50, y: yPosition, size: fontSize, font });
+            page.drawText(`HSN: ${item.hsn}, Qty: ${item.qty}, Rate: ${item.rate}, Amount: ${item.amt}`,
+                { x: 50, y: yPosition - 20, size: fontSize, font });
+            yPosition -= 40;
+        });
+
+        // 🛠️ Total Section
+        page.drawText(`Grand Total: ${data.totalAmount}`,
+            { x: 50, y: yPosition - 20, size: fontSize + 2, font, color: rgb(0, 0, 0) });
+
+        // 🛠️ Generate PDF
+        const pdfBytes = await pdfDoc.save();
+
+        // ✅ Send PDF as downloadable file
+        const fileName = `invoice-${Date.now()}.pdf`;
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.send(Buffer.from(pdfBytes));
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).send('Failed to generate PDF');
+    }
 });
 
-// Export server as a serverless function
+app.use('/.netlify/functions/api', router);
 module.exports.handler = serverless(app);

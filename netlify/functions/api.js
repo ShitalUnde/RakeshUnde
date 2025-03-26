@@ -44,25 +44,28 @@ router.post('/generate-invoice', async (req, res) => {
         page.drawText(`Items:`, { x: 50, y: yPosition, size: fontSize + 2, font, color: rgb(0, 0, 0.7) });
 
         yPosition -= 20;
-        data.items.forEach((item, index) => {
+        data.items.forEach((item) => {
             page.drawText(`• ${item.descOfGoods}`, { x: 50, y: yPosition, size: fontSize, font });
-            page.drawText(`HSN: ${item.hsn}, Qty: ${item.qty}, Rate: ${item.rate}, Amount: ${item.amt}`,
+            page.drawText(`HSN: ${item.hsn}, Qty: ${item.qty}, Rate: ₹${item.rate}, Amount: ₹${item.amt}`,
                 { x: 50, y: yPosition - 20, size: fontSize, font });
             yPosition -= 40;
         });
 
         // 🛠️ Total Section
-        page.drawText(`Grand Total: ${data.totalAmount}`,
+        page.drawText(`Grand Total: ₹${data.totalAmount}`,
             { x: 50, y: yPosition - 20, size: fontSize + 2, font, color: rgb(0, 0, 0) });
 
-        // 🛠️ Generate PDF
+        // ✅ Generate PDF
         const pdfBytes = await pdfDoc.save();
 
-        // ✅ Send PDF as downloadable file
-        const fileName = `invoice-${Date.now()}.pdf`;
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        res.setHeader('Content-Type', 'application/pdf');
-        res.send(Buffer.from(pdfBytes));
+        // ✅ Convert PDF to Base64
+        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+
+        // ✅ Return PDF as base64 response
+        res.status(200).json({
+            fileName: `invoice-${Date.now()}.pdf`,
+            pdfBase64
+        });
 
     } catch (error) {
         console.error('Error generating PDF:', error);
