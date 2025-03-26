@@ -8,21 +8,18 @@ app.use(express.json());
 
 // Your API routes
 router.get('/', (req, res) => {
-    res.json({ message: 'API is working!' });
+    res.send('API is working!');
 });
 
 router.get('/ok', (req, res) => {
-    res.json({ message: 'API1 is working!' });
+    res.send('API1 is working!');
 });
 
 router.post('/api/ok2', (req, res) => {
-    res.json({ message: 'API2 is working!' });
+    res.send({ message: 'API2 is working!' });
 });
 
-// Error handling
-// app.use((req, res) => {
-//     res.status(404).json({ error: 'Not found' });
-// });
+app.use('/.netlify/functions/api', router);
 
 // Export the serverless function temp
 module.exports.handler = serverless(app);
