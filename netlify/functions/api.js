@@ -58,14 +58,12 @@ router.post('/generate-invoice', async (req, res) => {
         // ✅ Generate PDF
         const pdfBytes = await pdfDoc.save();
 
-        // ✅ Convert PDF to Base64
-        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+        // ✅ Send PDF as downloadable response
+        const fileName = `invoice-${Date.now()}.pdf`;
 
-        // ✅ Return PDF as base64 response
-        res.status(200).json({
-            fileName: `invoice-${Date.now()}.pdf`,
-            pdfBase64
-        });
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.send(Buffer.from(pdfBytes));
 
     } catch (error) {
         console.error('Error generating PDF:', error);
