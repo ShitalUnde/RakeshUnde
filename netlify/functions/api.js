@@ -16,9 +16,9 @@ app.post('/api/ok', (req, res) => {
 });
 
 // Error handling
-app.use((req, res) => {
-    res.status(404).json({ error: 'Not found' });
-});
+// app.use((req, res) => {
+//     res.status(404).json({ error: 'Not found' });
+// });
 
 // Export the serverless function temp
 module.exports.handler = serverless(app);
