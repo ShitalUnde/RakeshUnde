@@ -56,7 +56,13 @@ router.post('/generate-invoice', async (req, res) => {
             { x: 50, y: yPosition - 20, size: fontSize + 2, font, color: rgb(0, 0, 0) });
 
         // ✅ Generate PDF
+        console.time('PDF Generation');
         const pdfBytes = await pdfDoc.save();
+        console.timeEnd('PDF Generation');
+
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
         // ✅ Send PDF as downloadable response
         const fileName = `invoice-${Date.now()}.pdf`;
