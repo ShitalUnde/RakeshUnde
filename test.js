@@ -2,19 +2,20 @@ const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const PORT = 3000;
 
 const app = express();
-const router = express.Router();
-app.use(express.json());
+// const router = express.Router();
+// app.use(express.json());
 app.use(bodyParser.json());
 
 // Test Routes
-router.get('/', (req, res) => res.send('API is working!'));
-router.get('/ok', (req, res) => res.send('API1 is working!'));
-router.post('/invoice', (req, res) => res.send({ message: 'API2 is working!' }));
+app.get('/', (req, res) => res.send('API is working!'));
+app.get('/ok', (req, res) => res.send('API1 is working!'));
+app.post('/invoice', (req, res) => res.send({ message: 'API2 is working!' }));
 
 // ✅ PDF Generation Route
-router.post('/generate-invoice', async (req, res) => {
+app.post('/generate-invoice', async (req, res) => {
     const data = req.body;
 
     if (!data) {
@@ -70,5 +71,10 @@ router.post('/generate-invoice', async (req, res) => {
     }
 });
 
-app.use('/.netlify/functions/api', router);
-module.exports.handler = serverless(app);
+// app.use('/.netlify/functions/api', router);
+// module.exports.handler = serverless(app);
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
+
