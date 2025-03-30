@@ -1,3 +1,19 @@
+const express = require('express');
+const serverless = require('serverless-http');
+const bodyParser = require('body-parser');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+
+const app = express();
+const router = express.Router();
+app.use(express.json());
+app.use(bodyParser.json());
+
+// Test Routes
+router.get('/', (req, res) => res.send('API is working!'));
+router.get('/ok', (req, res) => res.send('API1 is working!'));
+router.post('/invoice', (req, res) => res.send({ message: 'API2 is working!' }));
+
+// ✅ PDF Generation Route
 router.post('/generate-invoice', async (req, res) => {
     const data = req.body;
 
@@ -44,24 +60,24 @@ router.post('/generate-invoice', async (req, res) => {
         const pdfBytes = await pdfDoc.save();
         console.timeEnd('PDF Generation');
 
-        // ✅ Convert PDF bytes to Base64
-        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-
-        // ✅ Send Base64 response
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        res.status(200).json({
-            success: true,
-            pdfBase64: pdfBase64,
-            fileName: `invoice-${Date.now()}.pdf`,
-        });
+        console.log('1>', pdfBytes);
+        // ✅ Send PDF as downloadable response
+        const fileName = `invoice-${Date.now()}.pdf`;
+        console.log('2>', fileName);
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Type', 'application/pdf');
+        console.log('3>');
+        res.send(Buffer.from(pdfBytes));
+        console.log('4>');
 
     } catch (error) {
         console.error('Error generating PDF:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to generate PDF',
-        });
+        res.status(500).send('Failed to generate PDF');
     }
 });
+
+app.use('/.netlify/functions/api', router);
+module.exports.handler = serverless(app);
