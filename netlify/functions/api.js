@@ -97,7 +97,7 @@ router.post('/generate-invoice', async (req, res) => {
         page.drawText(`${data.totalAmount}`, { x: 470, y: yPosition, size: fontSize + 2, fontBold });
 
         yPosition -= 40;
-        page.drawText(`Total Amount (₹ - In Words): ${data.amtInWords}`, { x: 50, y: yPosition, size: fontSize, font });
+        page.drawText(`Total Amount ( - In Words): ${data.amtInWords}`, { x: 50, y: yPosition, size: fontSize, font });
 
         // ✅ Footer
         yPosition -= 60;
