@@ -1,11 +1,13 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 const app = express();
 const router = express.Router();
 app.use(express.json());
+app.use(cors());
 app.use(bodyParser.json());
 
 // Test Routes
