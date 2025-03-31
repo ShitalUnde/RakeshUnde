@@ -1,152 +1,265 @@
 const express = require('express');
-const PDFDocument = require('pdfkit');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const path = require('path');
+const cors = require('cors');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 const app = express();
 const PORT = 3000;
-
+app.use(express.json());
 app.use(bodyParser.json());
 
-// POST API to generate and download PDF in browser
-app.post('/generate-invoice', (req, res) => {
-    const invoiceData = req.body;
+// Helper function to strip HTML tags and clean up text
+const cleanText = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+};
 
-    if (!invoiceData) {
+app.get('/', (req, res) => res.send('API is working!'));
+
+app.post('/generate-invoice', async (req, res) => {
+    const data = req.body;
+
+    if (!data) {
         return res.status(400).send('Invalid invoice data');
     }
 
-    const pdfFilePath = path.join(__dirname, `invoice-${invoiceData.invoiceNumber}.pdf`);
-    const doc = new PDFDocument({ margin: 50 });
-
-    // Pipe PDF to file and send it for download
-    const stream = fs.createWriteStream(pdfFilePath);
-    doc.pipe(stream);
-
-    // Header with Logo Placeholder (Skip if no logo)
     try {
-        doc.image('logo-placeholder.png', 50, 45, { width: 100 })
-            .fillColor('#444444')
-            .fontSize(20)
-            .text('INVOICE', 400, 50, { align: 'right' })
-            .fontSize(10)
-            .text(`Invoice #: ${invoiceData.invoiceNumber}`, 400, 80, { align: 'right' })
-            .text(`Date: ${invoiceData.date}`, 400, 95, { align: 'right' })
-            .moveDown();
-    } catch (error) {
-        console.log('Logo not found, skipping...');
-    }
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([600, 850]);
+        const { width, height } = page.getSize();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const fontSize = 10;
+        let yPosition = height - 50;
 
-    // Company and Customer Info (Side-by-side layout)
-    doc.fillColor('#000000')
-        .fontSize(12)
-        .text('Buyer:', 50, 150)
-        .font('Helvetica-Bold')
-        .text(invoiceData.buyerName, 50, 170)
-        .font('Helvetica')
-        .text(invoiceData.address, 50, 185)
-        .text(`Phone: 8790908888`, 50, 200)
-        .text(`Email: jk@email.com`, 50, 215);
-
-    const rightX = 300;  // Customer info on the right
-    // doc.fillColor('#000000')
-    //     .fontSize(12)
-    //     .text('To:', rightX, 150)
-    //     .font('Helvetica-Bold')
-    //     .text(invoiceData.customer.name, rightX, 170)
-    //     .font('Helvetica')
-    //     .text(invoiceData.customer.address, rightX, 185)
-    //     .text(`Phone: ${invoiceData.customer.phone}`, rightX, 200)
-    //     .text(`Email: ${invoiceData.customer.email}`, rightX, 215)
-    //     .moveDown(2);
-
-    // Table Header
-    const tableTop = 250;
-    const itemX = 50;
-    const HSNpos = 200
-    const qtyX = 320;
-    const priceX = 400;
-    const totalX = 480;
-    const ratex = 500;
-
-    doc.fontSize(12)
-        .fillColor('#444444')
-        .text('Description', itemX, tableTop, { bold: true })
-        .text('HSN/SAC', HSNpos, tableTop)
-        .text('Qty', qtyX, tableTop)
-        .text('Unit', priceX, tableTop)
-        .text('Rate', totalX, tableTop)
-        .text('Amount', ratex, tableTop);
-
-    doc.moveTo(50, tableTop + 20)
-        .lineTo(550, tableTop + 20)
-        .stroke();
-
-    // Table Items
-    let y = tableTop + 30;
-    invoiceData.items.forEach((item) => {
-        const total = item.quantity * item.price;
-
-        doc.fillColor('#000000')
-            .font('Helvetica')
-            .text(item.descOfGoods, itemX, y)
-            .text(item.hsn, itemX, y)
-            .text(item.qty.toString(), qtyX, y)
-            .text(item.unit, itemX, y)
-            .text(`$${item.rate}`, priceX, y)
-            .text(`$${item.amt}`, totalX, y);
-
-        y += 25;
-    });
-
-    // Draw line below table
-    doc.moveTo(50, y)
-        .lineTo(550, y)
-        .stroke();
-
-    // Totals Section
-    y += 10;
-
-    doc.fontSize(12)
-        .text(`Basic Amount:`, 400, y)
-        .text(`$${invoiceData.basicAmount}`, totalX, y, { align: 'right' });
-    doc.fontSize(12)
-        .text(`Total Amount:`, 400, y)
-        .text(`$${invoiceData.totalAmount}`, totalX, y, { align: 'right' });
-
-    y += 20;
-
-    // doc.text(`Tax (${(invoiceData.taxRate * 100).toFixed(0)}%):`, 400, y)
-    //     .text(`$${(invoiceData.subtotal * invoiceData.taxRate)}`, totalX, y, { align: 'right' });
-
-    // y += 20;
-
-    // doc.font('Helvetica-Bold')
-    //     .text(`Total:`, 400, y)
-    //     .text(`$${invoiceData.total}`, totalX, y, { align: 'right' });
-
-    // Footer
-    doc.fontSize(10)
-        .fillColor('gray')
-        .text('Thank you for your business!', 50, 750, { align: 'center' });
-
-    doc.end();
-
-    stream.on('finish', () => {
-        console.log(`PDF saved: ${pdfFilePath}`);
-
-        // Send PDF for download
-        res.download(pdfFilePath, `invoice-${invoiceData.invoiceNumber}.pdf`, (err) => {
-            if (err) {
-                console.error('Error sending PDF:', err);
-                res.status(500).send('Failed to download PDF');
-            } else {
-                // Remove the PDF after download
-                fs.unlinkSync(pdfFilePath);
-            }
+        // ✅ Header Section - Business Info
+        page.drawText('TAX INVOICE', {
+            x: 230,
+            y: yPosition,
+            size: 18,
+            font: fontBold,
+            color: rgb(0, 0, 0)
         });
-    });
+        yPosition -= 30;
+
+        page.drawText(`INVOICE NO: ${data.invoiceNumber}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        page.drawText(`DATE: ${new Date(data.date).toLocaleDateString()}`, {
+            x: 400,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 30;
+
+        // ✅ Business Info (static for this example)
+        page.drawText('BUSINESS NAME', {
+            x: 50,
+            y: yPosition,
+            size: fontSize + 2,
+            font: fontBold
+        });
+        yPosition -= 15;
+        page.drawText('132 Street, City, State, PIN', {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        page.drawText('GSTIN: AAA213465', {
+            x: 50,
+            y: yPosition - 15,
+            size: fontSize,
+            font
+        });
+        page.drawText('Email: 122@gmail.com', {
+            x: 50,
+            y: yPosition - 30,
+            size: fontSize,
+            font
+        });
+        page.drawText('PAN NO: AAA132456', {
+            x: 50,
+            y: yPosition - 45,
+            size: fontSize,
+            font
+        });
+        yPosition -= 80;
+
+        // ✅ Bill To Section
+        page.drawText('Bill To:', {
+            x: 50,
+            y: yPosition,
+            size: fontSize + 2,
+            font: fontBold
+        });
+        yPosition -= 20;
+        page.drawText(`PARTY'S NAME: ${data.buyerName}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+
+        // Handle address with HTML tags
+        const cleanAddress = cleanText(data.address);
+        const addressLines = cleanAddress.split('\n');
+        addressLines.forEach(line => {
+            yPosition -= 15;
+            page.drawText(`ADDRESS: ${line}`, {
+                x: 50,
+                y: yPosition,
+                size: fontSize,
+                font
+            });
+        });
+
+        page.drawText(`GSTIN: ${data.gstno}`, {
+            x: 50,
+            y: yPosition - 30,
+            size: fontSize,
+            font
+        });
+        yPosition -= 60;
+
+        // ✅ Payment Info
+        page.drawText('Bank Details:', {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font: fontBold
+        });
+        yPosition -= 15;
+        page.drawText(`Bank Name: ${data.bank}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 15;
+        page.drawText(`Account No: ${data.accountNo}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 15;
+        page.drawText(`Branch: ${data.branch}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 15;
+        page.drawText(`IFSC Code: ${data.ifsc}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 30;
+
+        // ✅ Table Header
+        const descX = 50;
+        const hsnX = 200;
+        const qtyX = 300;
+        const rateX = 370;
+        const amtX = 470;
+
+        page.drawText('Description', { x: descX, y: yPosition, size: fontSize, font: fontBold });
+        page.drawText('HSN Code', { x: hsnX, y: yPosition, size: fontSize, font: fontBold });
+        page.drawText('Qty', { x: qtyX, y: yPosition, size: fontSize, font: fontBold });
+        page.drawText('Rate', { x: rateX, y: yPosition, size: fontSize, font: fontBold });
+        page.drawText('Amount', { x: amtX, y: yPosition, size: fontSize, font: fontBold });
+
+        // Table divider
+        yPosition -= 10;
+        page.drawLine({
+            start: { x: 50, y: yPosition },
+            end: { x: 550, y: yPosition },
+            thickness: 1,
+            color: rgb(0, 0, 0)
+        });
+        yPosition -= 20;
+
+        // ✅ Table Data
+        data.items.forEach(item => {
+            // Handle description with HTML tags
+            const cleanDesc = cleanText(item.descOfGoods);
+            const descLines = cleanDesc.split('\n');
+
+            // Draw first line of description
+            page.drawText(descLines[0], { x: descX, y: yPosition, size: fontSize, font });
+            page.drawText(item.hsn, { x: hsnX, y: yPosition, size: fontSize, font });
+            page.drawText(item.qty.toString(), { x: qtyX, y: yPosition, size: fontSize, font });
+            page.drawText(item.rate.toString(), { x: rateX, y: yPosition, size: fontSize, font });
+            page.drawText(item.amt.toString(), { x: amtX, y: yPosition, size: fontSize, font });
+
+            // Draw remaining description lines
+            for (let i = 1; i < descLines.length; i++) {
+                yPosition -= 15;
+                page.drawText(descLines[i], { x: descX, y: yPosition, size: fontSize, font });
+            }
+
+            yPosition -= 20;
+        });
+
+        // ✅ Totals Section
+        yPosition -= 30;
+        page.drawText('Basic Amount:', { x: 300, y: yPosition, size: fontSize, font: fontBold });
+        page.drawText(data.basicAmount, { x: amtX, y: yPosition, size: fontSize, font });
+        yPosition -= 20;
+
+        page.drawText('Grand Total:', { x: 300, y: yPosition, size: fontSize + 2, font: fontBold });
+        page.drawText(data.totalAmount, { x: amtX, y: yPosition, size: fontSize + 2, font: fontBold });
+        yPosition -= 30;
+
+        // ✅ Amount in Words
+        page.drawText(`Total Amount ( - In Words): ${data.amtInWords}`, {
+            x: 50,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+        yPosition -= 40;
+
+        // ✅ Footer
+        page.drawText('For: BUSINESS NAME', {
+            x: 50,
+            y: yPosition,
+            size: fontSize + 2,
+            font: fontBold
+        });
+        page.drawText('Authorised Signatory', {
+            x: 400,
+            y: yPosition,
+            size: fontSize,
+            font
+        });
+
+        // ✅ Generate PDF
+        const pdfBytes = await pdfDoc.save();
+
+        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+        res.status(200).json({
+            success: true,
+            pdfBase64: pdfBase64,
+            fileName: `invoice-${Date.now()}.pdf`,
+        });
+
+        // ✅ Send PDF Response
+        // res.setHeader('Content-Type', 'application/pdf');
+        // res.setHeader('Content-Disposition', `attachment; filename=invoice-${data.invoiceNumber || '1234WE'}.pdf`);
+        // res.send(pdfBytes);
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate PDF' });
+    }
 });
 
 // Start Server
