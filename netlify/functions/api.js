@@ -13,6 +13,11 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 
+function generateInvoiceNumber() {
+    const now = new Date();
+    return `INV#${now.getTime()}`; // Returns "INV-1716471234567" (milliseconds since epoch)
+}
+
 router.get('/', (req, res) => res.send('API is working!'));
 
 router.post("/generate-invoice", async (req, res) => {
@@ -159,7 +164,7 @@ router.post("/generate-invoice", async (req, res) => {
                     <div class="header">
                         <div class="invoice-info">
                             <p style="text-align: left; display: inline-block;"><strong>DATE:</strong> ${data.date}</p>
-                            <p style="text-align: right; display: inline-block; margin-left: 30px;"><strong>INVOICE NO:</strong> ${data.invoiceNumber}</p>
+                            <p style="text-align: right; display: inline-block; margin-left: 30px;"><strong>INVOICE NO:</strong> ${generateInvoiceNumber()}</p>
                         </div>
                     </div>
 

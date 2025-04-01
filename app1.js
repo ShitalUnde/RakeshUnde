@@ -7,6 +7,11 @@ const PORT = 3000;
 app.use(express.json());
 app.use(bodyParser.json());
 
+function generateInvoiceNumber() {
+    const now = new Date();
+    return `INV#${now.getTime()}`; // Returns "INV-1716471234567" (milliseconds since epoch)
+}
+
 app.get("/", (req, res) => res.send("API is working!"));
 
 app.post("/generate-invoice", async (req, res) => {
@@ -153,7 +158,7 @@ app.post("/generate-invoice", async (req, res) => {
                     <div class="header">
                         <div class="invoice-info">
                             <p style="text-align: left; display: inline-block;"><strong>DATE:</strong> ${data.date}</p>
-                            <p style="text-align: right; display: inline-block; margin-left: 30px;"><strong>INVOICE NO:</strong> ${data.invoiceNumber}</p>
+                            <p style="text-align: right; display: inline-block; margin-left: 30px;"><strong>INVOICE NO:</strong> ${generateInvoiceNumber()}</p>
                         </div>
                     </div>
 
