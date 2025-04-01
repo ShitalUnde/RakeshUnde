@@ -3,7 +3,9 @@ const serverless = require('serverless-http');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 // const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
-const puppeteer = require("puppeteer");
+// const puppeteer = require("puppeteer");
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
 const app = express();
 const router = express.Router();
@@ -297,7 +299,13 @@ router.post("/generate-invoice", async (req, res) => {
             `;
 
         // // Launch Puppeteer to generate the PDF from HTML
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
+        });
         const page = await browser.newPage();
         await page.setContent(invoiceHTML);
         const pdfBuffer = await page.pdf({ format: "A4" });
