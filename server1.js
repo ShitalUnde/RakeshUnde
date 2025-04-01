@@ -1,264 +1,190 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
-
+const express = require("express");
+const bodyParser = require("body-parser");
+const puppeteer = require("puppeteer");
 const app = express();
 const PORT = 3000;
 app.use(express.json());
 app.use(bodyParser.json());
 
+
 // Helper function to strip HTML tags and clean up text
 const cleanText = (html) => {
-    if (!html) return '';
-    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!html) return "";
+    return html
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 };
 
-app.get('/', (req, res) => res.send('API is working!'));
+app.get("/", (req, res) => res.send("API is working!"));
 
-app.post('/generate-invoice', async (req, res) => {
+app.post("/generate-invoice", async (req, res) => {
     const data = req.body;
 
+    const owner = {
+        name: 'Rakesh R. Unde',
+        add: `Sai Indo Properties, Shop No.2, Alandi Phata, Medankar Wadi, Chakan PUNE (410501)`,
+        email: `rakeshu88@gmail.com`,
+        ph: `8888406631`,
+        pan: `ACOPU7463M`
+    }
+
     if (!data) {
-        return res.status(400).send('Invalid invoice data');
+        return res.status(400).send("Invalid invoice data");
     }
 
     try {
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([600, 850]);
-        const { width, height } = page.getSize();
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        const fontSize = 10;
-        let yPosition = height - 50;
+        const invoiceHTML = `
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .container { width: 850px; margin: auto; padding: 20px; border: 1px solid #ccc; }
+                    .header { display: flex; justify-content: space-between; align-items: center; background: #004080; color: white; padding: 10px; }
+                    .header .business-info { text-align: center; flex: 1;}
 
-        // ✅ Header Section - Business Info
-        page.drawText('TAX INVOICE', {
-            x: 230,
-            y: yPosition,
-            size: 18,
-            font: fontBold,
-            color: rgb(0, 0, 0)
-        });
-        yPosition -= 30;
+                    .business-info p{
+                        color: black
+                    }
 
-        page.drawText(`INVOICE NO: ${data.invoiceNumber}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        page.drawText(`DATE: ${new Date(data.date).toLocaleDateString()}`, {
-            x: 400,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 30;
+                    .business-info p.bg {
+                        color: red;
+                        font-size: 40px;
+                    }
 
-        // ✅ Business Info (static for this example)
-        page.drawText('BUSINESS NAME', {
-            x: 50,
-            y: yPosition,
-            size: fontSize + 2,
-            font: fontBold
-        });
-        yPosition -= 15;
-        page.drawText('132 Street, City, State, PIN', {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        page.drawText('GSTIN: AAA213465', {
-            x: 50,
-            y: yPosition - 15,
-            size: fontSize,
-            font
-        });
-        page.drawText('Email: 122@gmail.com', {
-            x: 50,
-            y: yPosition - 30,
-            size: fontSize,
-            font
-        });
-        page.drawText('PAN NO: AAA132456', {
-            x: 50,
-            y: yPosition - 45,
-            size: fontSize,
-            font
-        });
-        yPosition -= 80;
 
-        // ✅ Bill To Section
-        page.drawText('Bill To:', {
-            x: 50,
-            y: yPosition,
-            size: fontSize + 2,
-            font: fontBold
-        });
-        yPosition -= 20;
-        page.drawText(`PARTY'S NAME: ${data.buyerName}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
+                    .header .invoice-details { text-align: right; flex: 1; }
+                    .section { margin-bottom: 20px; display: flex; }
+                    .section .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                    .section-content { flex: 1; }
+                    .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+                    .totals { text-align: right; margin-top: 20px; }
+                    .footer { text-align: right; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                    
+                        <div class="invoice-details">
+                            <p><strong>INVOICE NO:</strong> ${data.invoiceNumber
+            }</p>
+                            <p><strong>DATE:</strong> ${data.date}</p>
+                        </div>
+                    </div>
+                    <div class="header">
+                        <div class="business-info">
+                            <p class="bg"><strong>${owner.name}</strong></p>
+                            <p>${owner.add}</p>
+                            <p><strong>Mobile NO:</strong> ${owner.ph}</p>
+                            <p><strong>Email:</strong> ${owner.email}</p>
+                            <p><strong>PAN NO:</strong> ${owner.pan}</p>
+                        </div>
+                    </div>
+            
+                    <div class="section">
+                        <div class="section-content">
+                            <h3 class="section-title">Buyer</h3>
+                            <p><strong>PARTY'S NAME:</strong> ${data.buyerName}</p>
+                            <p><strong>ADDRESS:</strong> ${data.address}</p>
+                            <p><strong>GSTIN:</strong> ${data.gstno}</p>
+                        </div>
+                        <div class="section-content">
+                            <h3 class="section-title">PAYMENT INFO</h3>
+                            <p><strong>Payment Due Date:</strong> ${data.paymentDueDate
+            }</p>
+                            <p><strong>Payment Mode:</strong> ${data.paymentMode
+            }</p>
+                        </div>
+                    </div>
+                    <br/>
+                
+                    <div class="section">
+                        
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>HSN Code</th>
+                                    <th>Qty</th>
+                                    <th>Rate</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.items
+                .map(
+                    (item) => `
+                                    <tr>
+                                        <td>${item.descOfGoods}</td>
+                                        <td>${item.hsn}</td>
+                                        <td>${item.qty}</td>
+                                        <td>₹${item.rate}</td>
+                                        <td>₹${item.amt}</td>
+                                    </tr>
+                                `
+                )
+                .join("")}
+                            </tbody>
+                        </table>
+                    </div>
+            
+                    <div class="totals">
+                        <p><strong>Add: CGST @ 14%:</strong> ₹${data.cgst}</p>
+                        <p><strong>Add: SGST @ 14%:</strong> ₹${data.sgst}</p>
+                        <p><strong>Balance Received:</strong> ₹${data.balanceReceived
+            }</p>
+                        <p><strong>Balance Due:</strong> ₹${data.balanceDue}</p>
+                        <p><strong>Grand Total:</strong> ₹${data.totalAmount
+            }</p>
+                    </div>
+            
+                    <div class="footer">
+                        <p><strong>Total Amount (In Words):</strong> ${data.amtInWords
+            }</p>
+                        <p><strong>For:</strong> BUSINESS NAME</p>
+                        <p>Authorised Signatory</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
 
-        // Handle address with HTML tags
-        const cleanAddress = cleanText(data.address);
-        const addressLines = cleanAddress.split('\n');
-        addressLines.forEach(line => {
-            yPosition -= 15;
-            page.drawText(`ADDRESS: ${line}`, {
-                x: 50,
-                y: yPosition,
-                size: fontSize,
-                font
-            });
-        });
+        // // Launch Puppeteer to generate the PDF from HTML
+        // const browser = await puppeteer.launch();
+        // const page = await browser.newPage();
+        // await page.setContent(invoiceHTML);
+        // const pdfBuffer = await page.pdf({ format: "A4" });
+        // await browser.close();
 
-        page.drawText(`GSTIN: ${data.gstno}`, {
-            x: 50,
-            y: yPosition - 30,
-            size: fontSize,
-            font
-        });
-        yPosition -= 60;
+        // // Send the PDF as a base64 string in the response
+        // // const pdfBase64 = pdfBuffer.toString('base64');
+        // const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
+        // res.status(200).json({
+        //     success: true,
+        //     pdfBase64: pdfBase64,
+        //     fileName: `invoice-${Date.now()}.pdf`,
+        // });
 
-        // ✅ Payment Info
-        page.drawText('Bank Details:', {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font: fontBold
-        });
-        yPosition -= 15;
-        page.drawText(`Bank Name: ${data.bank}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 15;
-        page.drawText(`Account No: ${data.accountNo}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 15;
-        page.drawText(`Branch: ${data.branch}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 15;
-        page.drawText(`IFSC Code: ${data.ifsc}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 30;
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.setContent(invoiceHTML);
+        const pdfBuffer = await page.pdf({ format: "A4" });
+        await browser.close();
 
-        // ✅ Table Header
-        const descX = 50;
-        const hsnX = 200;
-        const qtyX = 300;
-        const rateX = 370;
-        const amtX = 470;
+        // Set the appropriate headers for PDF download
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="invoice-${Date.now()}.pdf"`
+        );
 
-        page.drawText('Description', { x: descX, y: yPosition, size: fontSize, font: fontBold });
-        page.drawText('HSN Code', { x: hsnX, y: yPosition, size: fontSize, font: fontBold });
-        page.drawText('Qty', { x: qtyX, y: yPosition, size: fontSize, font: fontBold });
-        page.drawText('Rate', { x: rateX, y: yPosition, size: fontSize, font: fontBold });
-        page.drawText('Amount', { x: amtX, y: yPosition, size: fontSize, font: fontBold });
-
-        // Table divider
-        yPosition -= 10;
-        page.drawLine({
-            start: { x: 50, y: yPosition },
-            end: { x: 550, y: yPosition },
-            thickness: 1,
-            color: rgb(0, 0, 0)
-        });
-        yPosition -= 20;
-
-        // ✅ Table Data
-        data.items.forEach(item => {
-            // Handle description with HTML tags
-            const cleanDesc = cleanText(item.descOfGoods);
-            const descLines = cleanDesc.split('\n');
-
-            // Draw first line of description
-            page.drawText(descLines[0], { x: descX, y: yPosition, size: fontSize, font });
-            page.drawText(item.hsn, { x: hsnX, y: yPosition, size: fontSize, font });
-            page.drawText(item.qty.toString(), { x: qtyX, y: yPosition, size: fontSize, font });
-            page.drawText(item.rate.toString(), { x: rateX, y: yPosition, size: fontSize, font });
-            page.drawText(item.amt.toString(), { x: amtX, y: yPosition, size: fontSize, font });
-
-            // Draw remaining description lines
-            for (let i = 1; i < descLines.length; i++) {
-                yPosition -= 15;
-                page.drawText(descLines[i], { x: descX, y: yPosition, size: fontSize, font });
-            }
-
-            yPosition -= 20;
-        });
-
-        // ✅ Totals Section
-        yPosition -= 30;
-        page.drawText('Basic Amount:', { x: 300, y: yPosition, size: fontSize, font: fontBold });
-        page.drawText(data.basicAmount, { x: amtX, y: yPosition, size: fontSize, font });
-        yPosition -= 20;
-
-        page.drawText('Grand Total:', { x: 300, y: yPosition, size: fontSize + 2, font: fontBold });
-        page.drawText(data.totalAmount, { x: amtX, y: yPosition, size: fontSize + 2, font: fontBold });
-        yPosition -= 30;
-
-        // ✅ Amount in Words
-        page.drawText(`Total Amount ( - In Words): ${data.amtInWords}`, {
-            x: 50,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-        yPosition -= 40;
-
-        // ✅ Footer
-        page.drawText('For: BUSINESS NAME', {
-            x: 50,
-            y: yPosition,
-            size: fontSize + 2,
-            font: fontBold
-        });
-        page.drawText('Authorised Signatory', {
-            x: 400,
-            y: yPosition,
-            size: fontSize,
-            font
-        });
-
-        // ✅ Generate PDF
-        const pdfBytes = await pdfDoc.save();
-
-        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-        res.status(200).json({
-            success: true,
-            pdfBase64: pdfBase64,
-            fileName: `invoice-${Date.now()}.pdf`,
-        });
-
-        // ✅ Send PDF Response
-        // res.setHeader('Content-Type', 'application/pdf');
-        // res.setHeader('Content-Disposition', `attachment; filename=invoice-${data.invoiceNumber || '1234WE'}.pdf`);
-        // res.send(pdfBytes);
-
+        // Send the PDF buffer directly in the response
+        res.status(200).send(Buffer.from(pdfBuffer));
     } catch (error) {
-        console.error('Error generating PDF:', error);
-        res.status(500).json({ success: false, error: 'Failed to generate PDF' });
+        console.error("Error generating PDF:", error);
+        res.status(500).json({ success: false, error: "Failed to generate PDF" });
     }
 });
 
