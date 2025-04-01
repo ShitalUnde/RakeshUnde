@@ -1,43 +1,11 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const puppeteer = require("puppeteer");
-const app = express();
-const PORT = 3000;
-app.use(express.json());
-app.use(bodyParser.json());
-
-app.get("/", (req, res) => res.send("API is working!"));
-
-app.post("/generate-invoice", async (req, res) => {
-    const data = req.body;
-
-    const owner = {
-        name: "Rakesh R. Unde",
-        add: `Shop No.2, Alandi Phata, Medankar Wadi, Chakan PUNE (410501)`,
-        email: `rakeshu88@gmail.com`,
-        ph: `8888406631`,
-        pan: `ACOPU7463M`,
-        business: `Sai Indo Properties`,
-    };
-
-    if (!data) {
-        return res.status(400).send("Invalid invoice data");
-    }
-
-    try {
-        const invoiceHTML = `
+const invoiceHTML = `
             <html>
-             
             <head>
              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
                 <style>
-                     body { 
-        font-family: Arial, sans-serif; 
-        line-height: 1;  /* Set line-height to 1 to remove extra line spacing */
-    }
-
-                    .container { width: 850px; margin: auto; padding: 10px; border: 1px solid #ccc; }
-                    .header { display: flex; justify-content: space-between; align-items: center; background: #004080; color: white; padding: 5px; }
+                    body { font-family: Arial, sans-serif; }
+                    .container { width: 850px; margin: auto; padding: 20px; border: 1px solid #ccc; }
+                    .header { display: flex; justify-content: space-between; align-items: center; background: #004080; color: white; padding: 10px; }
                     .header .business-info { text-align: center; flex: 1;}
 
                     .business-info p{
@@ -55,7 +23,7 @@ app.post("/generate-invoice", async (req, res) => {
                     .section .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
                     .section-content { flex: 1; }
                     .table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; line-height: 1; }
+                    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
                     
 
                 .totals {
@@ -138,7 +106,7 @@ app.post("/generate-invoice", async (req, res) => {
                             <thead>
                                 <tr>
                                     <th>Description</th>
-                                    <th>HSN/SAC</th>
+                                    <th>HSN Code</th>
                                     <th>Qty</th>
                                     <th>Rate</th>
                                     <th>Amount</th>
@@ -150,7 +118,7 @@ app.post("/generate-invoice", async (req, res) => {
                     (item) => `
                                     <tr>
                                         <td>${item.descOfGoods}</td>
-                                        <td>${!!item.hsn ? item.hsn : ''}</td>
+                                        <td>${item.hsn}</td>
                                         <td>${item.qty}</td>
                                         <td>₹${item.rate}</td>
                                         <td>₹${item.amt}</td>
@@ -189,33 +157,3 @@ app.post("/generate-invoice", async (req, res) => {
             </body>
             </html>
             `;
-
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.setContent(invoiceHTML);
-        const pdfBuffer = await page.pdf({ format: "A4" });
-        await browser.close();
-
-        //  const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
-        // res.status(200).json({
-        //     success: true,
-        //     pdfBase64: pdfBase64,
-        //     fileName: `invoice-${Date.now()}.pdf`,
-        // });
-
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="invoice-${Date.now()}.pdf"`
-        );
-        res.status(200).send(Buffer.from(pdfBuffer));
-    } catch (error) {
-        console.error("Error generating PDF:", error);
-        res.status(500).json({ success: false, error: "Failed to generate PDF" });
-    }
-});
-
-// Start Server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});

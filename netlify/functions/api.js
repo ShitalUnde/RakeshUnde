@@ -14,117 +14,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 router.get('/', (req, res) => res.send('API is working!'));
-/*
-router.post('/generate-invoice', async (req, res) => {
-    const data = req.body;
-
-    if (!data) {
-        return res.status(400).send('Invalid invoice data');
-    }
-
-    try {
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([600, 850]);
-        const { width, height } = page.getSize();
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        const fontSize = 12;
-        let yPosition = height - 50;
-
-        // ✅ Header Section
-        page.drawText('TAX INVOICE', { x: 220, y: yPosition, size: 18, font: fontBold, color: rgb(0, 0, 0) });
-        yPosition -= 30;
-
-        page.drawText(`INVOICE NO: ${data.invoiceNumber}`, { x: 50, y: yPosition, size: fontSize, font });
-        page.drawText(`DATE: ${data.date}`, { x: 400, y: yPosition, size: fontSize, font });
-
-        // ✅ Business Info
-        yPosition -= 30;
-        page.drawText('BUSINESS NAME', { x: 50, y: yPosition, size: fontSize + 2, font: fontBold });
-        yPosition -= 15;
-        page.drawText('132 Street, City, State, PIN', { x: 50, y: yPosition, size: fontSize, font });
-        page.drawText('GSTIN: AAA213465', { x: 50, y: yPosition - 15, size: fontSize, font });
-        page.drawText('Email: 122@gmail.com', { x: 50, y: yPosition - 30, size: fontSize, font });
-        page.drawText('PAN NO: AAA132456', { x: 50, y: yPosition - 45, size: fontSize, font });
-
-        // ✅ Bill To Section
-        yPosition -= 80;
-        page.drawText(`Bill To:`, { x: 50, y: yPosition, size: fontSize + 2, font: fontBold });
-        yPosition -= 20;
-        page.drawText(`PARTY'S NAME: ${data.buyerName}`, { x: 50, y: yPosition, size: fontSize, font });
-        page.drawText(`ADDRESS: ${data.address}`, { x: 50, y: yPosition - 15, size: fontSize, font });
-        page.drawText(`GSTIN: ${data.gstno}`, { x: 50, y: yPosition - 30, size: fontSize, font });
-
-        // ✅ Payment Info
-        yPosition -= 60;
-        page.drawText('Payment Due Date:', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText('Payment Mode:', { x: 300, y: yPosition, size: fontSize, fontBold });
-
-        // ✅ Items Table Header
-        yPosition -= 40;
-        page.drawText('Description', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText('HSN Code', { x: 220, y: yPosition, size: fontSize, fontBold });
-        page.drawText('Qty', { x: 320, y: yPosition, size: fontSize, fontBold });
-        page.drawText('Rate', { x: 390, y: yPosition, size: fontSize, fontBold });
-        page.drawText('Amount', { x: 470, y: yPosition, size: fontSize, fontBold });
-
-        // ✅ Items Data
-        yPosition -= 20;
-        data.items.forEach(item => {
-            page.drawText(`${item.descOfGoods}`, { x: 50, y: yPosition, size: fontSize, font });
-            page.drawText(`${item.hsn}`, { x: 220, y: yPosition, size: fontSize, font });
-            page.drawText(`${item.qty}`, { x: 320, y: yPosition, size: fontSize, font });
-            page.drawText(`${item.rate}`, { x: 390, y: yPosition, size: fontSize, font });
-            page.drawText(`${item.amt}`, { x: 470, y: yPosition, size: fontSize, font });
-            yPosition -= 20;
-        });
-
-        // ✅ Totals and Taxes
-        yPosition -= 30;
-        page.drawText('Add: CGST @ 14%', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText(`${data.cgst}`, { x: 470, y: yPosition, size: fontSize, font });
-
-        yPosition -= 20;
-        page.drawText('Add: SGST @ 14%', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText(`${data.sgst}`, { x: 470, y: yPosition, size: fontSize, font });
-
-        yPosition -= 20;
-        page.drawText('Balance Received:', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText(`${data.balanceReceived}`, { x: 470, y: yPosition, size: fontSize, font });
-
-        yPosition -= 20;
-        page.drawText('Balance Due:', { x: 50, y: yPosition, size: fontSize, fontBold });
-        page.drawText(`${data.balanceDue}`, { x: 470, y: yPosition, size: fontSize, font });
-
-        yPosition -= 30;
-        page.drawText('Grand Total:', { x: 50, y: yPosition, size: fontSize + 2, fontBold });
-        page.drawText(`${data.totalAmount}`, { x: 470, y: yPosition, size: fontSize + 2, fontBold });
-
-        yPosition -= 40;
-        page.drawText(`Total Amount ( - In Words): ${data.amtInWords}`, { x: 50, y: yPosition, size: fontSize, font });
-
-        // ✅ Footer
-        yPosition -= 60;
-        page.drawText('For: BUSINESS NAME', { x: 50, y: yPosition, size: fontSize + 2, fontBold });
-        page.drawText('Authorised Signatory', { x: 400, y: yPosition, size: fontSize, font });
-
-        // ✅ Generate PDF
-        const pdfBytes = await pdfDoc.save();
-
-        // ✅ Send PDF Response
-        const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-        res.status(200).json({
-            success: true,
-            pdfBase64: pdfBase64,
-            fileName: `invoice-${Date.now()}.pdf`,
-        });
-
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        res.status(500).json({ success: false, error: 'Failed to generate PDF' });
-    }
-});
-*/
 
 router.post("/generate-invoice", async (req, res) => {
     const data = req.body;
@@ -145,12 +34,17 @@ router.post("/generate-invoice", async (req, res) => {
     try {
         const invoiceHTML = `
             <html>
+             
             <head>
              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
                 <style>
-                    body { font-family: Arial, sans-serif; }
-                    .container { width: 850px; margin: auto; padding: 20px; border: 1px solid #ccc; }
-                    .header { display: flex; justify-content: space-between; align-items: center; background: #004080; color: white; padding: 10px; }
+                     body { 
+        font-family: Arial, sans-serif; 
+        line-height: 1;  /* Set line-height to 1 to remove extra line spacing */
+    }
+
+                    .container { width: 850px; margin: auto; padding: 10px; border: 1px solid #ccc; }
+                    .header { display: flex; justify-content: space-between; align-items: center; background: #004080; color: white; padding: 5px; }
                     .header .business-info { text-align: center; flex: 1;}
 
                     .business-info p{
@@ -168,7 +62,7 @@ router.post("/generate-invoice", async (req, res) => {
                     .section .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
                     .section-content { flex: 1; }
                     .table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+                    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; line-height: 1; }
                     
 
                 .totals {
@@ -222,12 +116,17 @@ router.post("/generate-invoice", async (req, res) => {
             }</strong></p>
                             <p><i class="fas fa-map-marker-alt"></i> ${owner.add
             }</p> 
-                            <p><i class="fas fa-phone-alt"></i>  ${owner.ph
-            }</p> 
-                            <p><i class="fas fa-envelope"></i> ${owner.email
-            }</p> 
-                            <p><i class="fas fa-credit-card"></i>  ${owner.pan
-            }</p> 
+                     <div>
+                        <p style="display: inline-block; margin-right: 20px;">
+                            <i class="fas fa-phone-alt"></i> ${owner.ph}
+                        </p>
+                        <p style="display: inline-block; margin-right: 20px;">
+                            <i class="fas fa-envelope"></i> ${owner.email}
+                        </p>
+                        <p style="display: inline-block;">
+                           <i class="fas fa-id-card"></i> ${owner.pan}
+                        </p>
+                     </div>  
                         </div>
                     </div>
             
@@ -246,7 +145,7 @@ router.post("/generate-invoice", async (req, res) => {
                             <thead>
                                 <tr>
                                     <th>Description</th>
-                                    <th>HSN Code</th>
+                                    <th>HSN/SAC</th>
                                     <th>Qty</th>
                                     <th>Rate</th>
                                     <th>Amount</th>
@@ -258,7 +157,7 @@ router.post("/generate-invoice", async (req, res) => {
                     (item) => `
                                     <tr>
                                         <td>${item.descOfGoods}</td>
-                                        <td>${item.hsn}</td>
+                                        <td>${!!item.hsn ? item.hsn : ''}</td>
                                         <td>${item.qty}</td>
                                         <td>₹${item.rate}</td>
                                         <td>₹${item.amt}</td>
@@ -311,30 +210,12 @@ router.post("/generate-invoice", async (req, res) => {
         const pdfBuffer = await page.pdf({ format: "A4" });
         await browser.close();
 
-        // Send the PDF as a base64 string in the response
-        // const pdfBase64 = pdfBuffer.toString('base64');
         const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
         res.status(200).json({
             success: true,
             pdfBase64: pdfBase64,
             fileName: `invoice-${Date.now()}.pdf`,
         });
-
-        // const browser = await puppeteer.launch();
-        // const page = await browser.newPage();
-        // await page.setContent(invoiceHTML);
-        // const pdfBuffer = await page.pdf({ format: "A4" });
-        // await browser.close();
-
-        // Set the appropriate headers for PDF download
-        // res.setHeader("Content-Type", "application/pdf");
-        // res.setHeader(
-        //     "Content-Disposition",
-        //     `attachment; filename="invoice-${Date.now()}.pdf"`
-        // );
-
-        // Send the PDF buffer directly in the response
-        // res.status(200).send(Buffer.from(pdfBuffer));
     } catch (error) {
         console.error("Error generating PDF:", error);
         res.status(500).json({ success: false, error: "Failed to generate PDF" });
